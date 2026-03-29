@@ -7,6 +7,7 @@ export const createPulsingIcon = (color, username, markerType, batteryLevel = nu
   const isLowBattery = batteryLevel !== null && batteryLevel < 0.15;
   const isOutside = markerType === "outside";
   const isFar = markerType === "far";
+  const isDisconnected = markerType === "disconnected";
 
   // Battery icon SVG
   const batteryIcon = isLowBattery
@@ -39,11 +40,22 @@ export const createPulsingIcon = (color, username, markerType, batteryLevel = nu
       </div>`
     : "";
 
+  // Disconnected icon
+  const disconnectedIcon = isDisconnected
+    ? `<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:10;
+          background:#6b7280;color:white;padding:2px 6px;border-radius:8px;
+          font-weight:bold;font-size:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          animation:disconnected-pulse 1s ease-in-out infinite;">
+        🔌
+      </div>`
+    : "";
+
   const iconHtml = `
     <div style="position:relative;width:40px;height:40px;">
       ${batteryIcon}
       ${sosIcon}
       ${warningIcon}
+      ${disconnectedIcon}
       
       <!-- Outer pulsing ring for SOS -->
       ${
@@ -74,6 +86,21 @@ export const createPulsingIcon = (color, username, markerType, batteryLevel = nu
         "></span>`
           : ""
       }
+
+      <!-- Blinking ring for disconnected users -->
+      ${
+        isDisconnected
+          ? `<span style="
+          position:absolute;
+          left:-5px;top:-5px;
+          width:50px;height:50px;
+          border-radius:50%;
+          background:rgba(107, 114, 128, 0.4);
+          animation:disconnected-blink 2s cubic-bezier(.4,0,.6,1) infinite;
+          z-index:1;
+        "></span>`
+          : ""
+      }
       
       <!-- Main marker circle -->
       <span style="
@@ -81,12 +108,13 @@ export const createPulsingIcon = (color, username, markerType, batteryLevel = nu
         left:5px;top:5px;
         width:30px;height:30px;
         border-radius:50%;
-        background:${isSOS ? "#ef4444" : isOutside ? "#f59e0b" : isFar ? "#eab308" : color};
+        background:${isSOS ? "#ef4444" : isOutside ? "#f59e0b" : isFar ? "#eab308" : isDisconnected ? "#6b7280" : color};
         border:3px solid white;
         box-shadow:0 2px 8px rgba(0,0,0,0.3);
         z-index:2;
         ${isSOS ? "animation:marker-blink 1s ease-in-out infinite;" : ""}
         ${isOutside || isFar ? "animation:marker-blink 1.5s ease-in-out infinite;" : ""}
+        ${isDisconnected ? "animation:marker-blink 2s ease-in-out infinite;" : ""}
       "></span>
       
       <!-- Inner icon -->
@@ -133,6 +161,15 @@ export const createPulsingIcon = (color, username, markerType, batteryLevel = nu
         @keyframes warning-pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
           50% { transform: translateX(-50%) scale(1.15); }
+        }
+        @keyframes disconnected-pulse {
+          0%, 100% { transform: translateX(-50%) scale(1); }
+          50% { transform: translateX(-50%) scale(1.1); }
+        }
+        @keyframes disconnected-blink {
+          0% { opacity: 0.7; transform:scale(1); }
+          50% { opacity: 0.1; transform:scale(1.4); }
+          100% { opacity: 0.7; transform:scale(1); }
         }
       </style>
     </div>

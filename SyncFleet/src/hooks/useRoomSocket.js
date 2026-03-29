@@ -27,6 +27,7 @@ export const useRoomSocket = ({
   const [activeUsers, setActiveUsers] = useState([]);
   const [userLocations, setUserLocations] = useState({});
   const [alertUsers, setAlertUsers] = useState({});
+  const [disconnectedUsers, setDisconnectedUsers] = useState({});
 
   const [userTrails, setUserTrails] = useState({});
   const [creatorSocketId, setCreatorSocketId] = useState(null); // ✅ NEW
@@ -63,6 +64,25 @@ export const useRoomSocket = ({
     };
 
     const handleUserJoined = ({ username, socketId, isCreator }) => {
+      // Remove from disconnected users if they were disconnected (match by username)
+      setDisconnectedUsers((prev) => {
+        const next = { ...prev };
+        const disconnectedSocketId = Object.keys(next).find(id => next[id].username === username);
+        if (disconnectedSocketId) {
+          // Send system message that user reconnected
+          socket.emit("chat-message", {
+            roomCode,
+            message: {
+              type: "system",
+              text: `${username} has reconnected`,
+              timestamp: Date.now(),
+            },
+          });
+          delete next[disconnectedSocketId];
+        }
+        return next;
+      });
+
       setActiveUsers((prev) => [
         ...prev.filter((u) => u.socketId !== socketId),
         { socketId, username, isCreator }, // ✅ Include isCreator
@@ -101,22 +121,41 @@ export const useRoomSocket = ({
     };
 
     const handleUserLeft = ({ socketId }) => {
-      delete lastSeenRef.current[socketId];
+      const user = activeUsers.find((u) => u.socketId === socketId);
+      if (user) {
+        // Mark as disconnected instead of removing
+        setDisconnectedUsers((prev) => ({
+          ...prev,
+          [socketId]: {
+            username: user.username,
+            lastCoords: userLocations[socketId] || null,
+            disconnectedAt: Date.now(),
+          },
+        }));
+        // Send system message
+        socket.emit("chat-message", {
+          roomCode,
+          message: {
+            type: "system",
+            text: `${user.username} has disconnected`,
+            timestamp: Date.now(),
+          },
+        });
+        showToast(`${user.username} has disconnected`, "warning");
+      }
+      // Remove from active users and locations
+      setActiveUsers((prev) => prev.filter((u) => u.socketId !== socketId));
       setUserLocations((prev) => {
         const newLocations = { ...prev };
         delete newLocations[socketId];
         return newLocations;
-      });
-      setActiveUsers((prev) => {
-        const user = prev.find((u) => u.socketId === socketId);
-        if (user) showToast(`${user.username} left the room`, "info");
-        return prev.filter((u) => u.socketId !== socketId);
       });
       setAlertUsers((prev) => {
         const next = { ...prev };
         delete next[socketId];
         return next;
       });
+      delete lastSeenRef.current[socketId];
       if (onUserLeft) onUserLeft({ socketId });
     };
 
@@ -427,6 +466,7 @@ export const useRoomSocket = ({
     userLocations,
     userTrails,
     creatorSocketId, // ✅ Export creator socket ID
+    disconnectedUsers,
     setUserLocations,
     setAlertUsers,
     alertUsers,

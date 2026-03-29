@@ -42,6 +42,7 @@ const MapDisplay = ({
   shouldRecenter,
   isRoomCreator,
   creatorSocketId, // ✅ NEW
+  disconnectedUsers = {},
 }) => {
   const [mapReady, setMapReady] = useState(false);
   const calculateDeviation = (userCoords) => {
@@ -167,6 +168,20 @@ const MapDisplay = ({
             </React.Fragment>
           );
         })}
+
+      {/* Disconnected Users */}
+      {Object.entries(disconnectedUsers).map(([socketId, user]) => {
+        if (!user?.lastCoords?.coords) return null;
+        return (
+          <UserMarker
+            key={`disconnected-${socketId}`}
+            username={`${user.username} (Disconnected)`}
+            coords={user.lastCoords.coords}
+            color="#6B7280" // Gray color for disconnected
+            markerType="disconnected"
+          />
+        );
+      })}
     </MapContainer>
   </div>
 );
@@ -194,6 +209,7 @@ MapDisplay.propTypes = {
   shouldRecenter: PropTypes.bool,
   isRoomCreator: PropTypes.bool,
   creatorSocketId: PropTypes.string, // ✅ NEW
+  disconnectedUsers: PropTypes.object,
 };
 
 export default MapDisplay;

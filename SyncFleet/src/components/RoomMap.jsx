@@ -237,6 +237,7 @@ useEffect(() => {
     alertUsers,
     userTrails,
     creatorSocketId: hookCreatorSocketId, // ✅ GET FROM HOOK
+    disconnectedUsers,
     setUserLocations,
     setAlertUsers,
   } = useRoomSocket({
@@ -769,6 +770,7 @@ useEffect(() => {
           shouldRecenter={shouldRecenter}
           isRoomCreator={isRoomCreator}
           creatorSocketId={creatorSocketId}
+          disconnectedUsers={disconnectedUsers}
         />
 
         {/* Connection Status - Mobile */}
