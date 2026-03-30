@@ -42,8 +42,11 @@ const MapDisplay = ({
   shouldRecenter,
   isRoomCreator,
   creatorSocketId, // ✅ NEW
+  disconnectedUsers = {},
 }) => {
   const [mapReady, setMapReady] = useState(false);
+  const hasActiveGeofence =
+    Boolean(geofence?.center) && Number(geofence?.radius) > 0;
   const calculateDeviation = (userCoords) => {
     // ✅ Calculate deviation from geofence center (creator's position)
     if (!geofence.center || !userCoords) return 0;
@@ -86,7 +89,11 @@ const MapDisplay = ({
 
       {/* Geofence */}
       {geofence.center && (
-        <GeofenceCircle center={geofence.center} radius={geofence.radius} />
+        <GeofenceCircle 
+          key={`geofence-${geofence.center.lat}-${geofence.center.lng}-${geofence.radius}`} 
+          center={geofence.center} 
+          radius={geofence.radius} 
+        />
       )}
 
       {/* Hazards */}
@@ -132,7 +139,11 @@ const MapDisplay = ({
           if (u.isStationary) markerType = "stationary";
           else if (u.isSOS) markerType = "sos";
           else if (!isCreator && alertUsers[id]) markerType = "outside";
-          else if (!isCreator && deviationDistance > DEVIATION_THRESHOLD)
+          else if (
+            !isCreator &&
+            !hasActiveGeofence &&
+            deviationDistance > DEVIATION_THRESHOLD
+          )
             markerType = "far";
 
           return (
@@ -167,6 +178,20 @@ const MapDisplay = ({
             </React.Fragment>
           );
         })}
+
+      {/* Disconnected Users */}
+      {Object.entries(disconnectedUsers).map(([socketId, user]) => {
+        if (!user?.lastCoords?.coords) return null;
+        return (
+          <UserMarker
+            key={`disconnected-${socketId}`}
+            username={`${user.username} (Disconnected)`}
+            coords={user.lastCoords.coords}
+            color="#6B7280" // Gray color for disconnected
+            markerType="disconnected"
+          />
+        );
+      })}
     </MapContainer>
   </div>
 );
@@ -194,6 +219,7 @@ MapDisplay.propTypes = {
   shouldRecenter: PropTypes.bool,
   isRoomCreator: PropTypes.bool,
   creatorSocketId: PropTypes.string, // ✅ NEW
+  disconnectedUsers: PropTypes.object,
 };
 
 export default MapDisplay;

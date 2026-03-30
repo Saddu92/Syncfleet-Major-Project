@@ -9,6 +9,7 @@ const STATUS_COLORS = {
   stationary: "#B91C1C",
   far: "#EAB308",
   outside: "#F59E0B",
+  disconnected: "#6B7280",
 };
 
 const UserMarker = ({
@@ -65,6 +66,12 @@ const UserMarker = ({
             </div>
           )}
 
+          {markerType === "disconnected" && (
+            <div className="px-3 py-2 rounded-md bg-gray-100 text-gray-700 font-medium text-xs">
+              User disconnected
+            </div>
+          )}
+
           {/* Battery */}
           {batteryLevel !== null &&
             batteryLevel !== undefined && (
@@ -100,6 +107,7 @@ UserMarker.propTypes = {
     "far",
     "outside",
     "sos",
+    "disconnected",
   ]),
   deviationDistance: PropTypes.number,
   batteryLevel: PropTypes.number,
